@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-st.title("🚀 AI Dashboard Project")
+st.title("🚀 Auto Insights AI Dashboard")
 
 st.write("Upload your CSV or Excel file to visualize the data!")
 
