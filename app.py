@@ -50,7 +50,7 @@ if uploaded_file is not None:
         st.write(df.describe())
 
         # =========================
-        # 🤖 QUERY BOT FEATURE
+        # 🤖 QUERY BOT FEATURE (FIXED)
         # =========================
         st.write("---")
         st.write("## 🤖 Ask Questions About Your Data")
@@ -62,14 +62,22 @@ if uploaded_file is not None:
                 query = user_query.lower()
                 df_query = df.copy()
 
-                # Detect years
+                # Extract years
                 years = re.findall(r'\d{4}', query)
 
                 if len(years) >= 2:
                     start_year = int(years[0])
                     end_year = int(years[1])
 
-                    date_cols = [col for col in df.columns if 'date' in col.lower() or 'year' in col.lower()]
+                    # 🔥 SMART DATE COLUMN DETECTION
+                    date_cols = []
+                    for col in df.columns:
+                        try:
+                            temp = pd.to_datetime(df[col], errors='coerce')
+                            if temp.notna().sum() > 0:
+                                date_cols.append(col)
+                        except:
+                            pass
 
                     if date_cols:
                         date_col = date_cols[0]
@@ -81,14 +89,25 @@ if uploaded_file is not None:
                         ]
 
                         st.write(f"### 📊 Data from {start_year} to {end_year}")
-                        st.dataframe(df_query.head())
+                        st.write("Filtered rows:", len(df_query))
 
-                        numeric_cols = df_query.select_dtypes(include=['number']).columns.tolist()
+                        if df_query.empty:
+                            st.warning("⚠️ No data found for given years.")
+                        else:
+                            st.dataframe(df_query.head())
 
-                        if numeric_cols:
-                            fig = px.bar(df_query, x=date_col, y=numeric_cols[0],
-                                         title=f"{numeric_cols[0]} from {start_year} to {end_year}")
-                            st.plotly_chart(fig, use_container_width=True)
+                            numeric_cols = df_query.select_dtypes(include=['number']).columns.tolist()
+
+                            if numeric_cols:
+                                fig = px.bar(
+                                    df_query,
+                                    x=date_col,
+                                    y=numeric_cols[0],
+                                    title=f"{numeric_cols[0]} from {start_year} to {end_year}"
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("⚠️ No date/year column detected in dataset.")
 
                 elif "top" in query:
                     numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
